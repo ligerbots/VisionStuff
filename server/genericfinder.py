@@ -53,11 +53,40 @@ class GenericFinder:
         return (x + int(w / 2), y + int(h / 2)), (w, h)
 
     @staticmethod
+    def approxPolyDP_adaptive(contour, nsides, max_dp_error=0.1):
+        '''Use approxPolyDP to fit a polygon to a contour.
+        Find the smallest dp_error that gets the correct number of sides.
+        The results seem to often be a little wrong, but they are a quick starting point.'''
+
+        step = 0.0005
+        peri = cv2.arcLength(contour, True)
+        dp_err = step
+        while dp_err <= max_dp_error:
+            res = cv2.approxPolyDP(contour, dp_err * peri, True)
+            if len(res) <= nsides:
+                # print('approxPolyDP_adaptive found at step', step)
+                return res
+            dp_err += step
+        # print('approxPolyDP_adaptive failed')
+        return None
+
+    @staticmethod
+    def quad_from_diagonals(contour):
+        '''Find the furthest points along the diagonal to be the quadrilateral.
+        Taken from Robot Casserole 1736. Thanks!'''
+
+        x_plus_y = contour[:, :, 0] + contour[:, :, 1]
+        x_minus_y = contour[:, :, 0] - contour[:, :, 1]
+        cornerIndices = (x_plus_y.argmin(), x_minus_y.argmin(), x_plus_y.argmax(), x_minus_y.argmax())
+        return contour[cornerIndices, :]
+
+    @staticmethod
     def quad_fit(contour, image_frame=None):
         '''Best fit of a quadrilateral to the contour.
         Pass in image_frame to get some debugging info.'''
 
-        approx = hough_fit.approxPolyDP_adaptive(contour, nsides=4)
+        # approx = GenericFinder.approxPolyDP_adaptive(contour, nsides=4)
+        approx = GenericFinder.quad_from_diagonals(contour)
         return hough_fit.hough_fit(contour, nsides=4, approx_fit=approx, image_frame=image_frame)
 
     @staticmethod
@@ -70,8 +99,10 @@ class GenericFinder:
             center = contour.mean(axis=0)
 
         d = contour - center
+
         # remember that y-axis increases down, so flip the sign
-        angle = (numpy.arctan2(-d[:, 1], d[:, 0]) - pi_by_2) % two_pi
+        angle = (numpy.arctan2(-d[:, :, 1], d[:, :, 0]) - pi_by_2) % two_pi
+        angle = angle[:, 0] # contours have 3 dimensions, drop one here
         return contour[numpy.argsort(angle)]
 
     @staticmethod
@@ -143,7 +174,7 @@ def time_processing(cube_processor, input_files):
     # Loop 100x over the files. This is needed to make it long enough
     #  to get reasonable statistics. If we have 100s of files, we could reduce this.
     # Need the total time to be many seconds so that the timing resolution is good.
-    for _ in range(100):
+    for _ in range(10):
         for image_file in input_files:
             with CodeTimer("Read Image"):
                 bgr_frame = cv2.imread(image_file)

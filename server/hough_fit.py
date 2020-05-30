@@ -94,24 +94,8 @@ def hough_fit(contour, nsides=None, approx_fit=None, image_frame=None,
 
     if res is None:
         return None
-    return array(res) + offset_vec
-
-
-def approxPolyDP_adaptive(contour, nsides, max_dp_error=0.1):
-    '''Use approxPolyDP to fit a polygon to a contour.
-    Find the smallest dp_error that gets the correct number of sides.
-    The results seem to often be a little wrong, but they are a quick starting point.'''
-
-    step = 0.0005
-    peri = cv2.arcLength(contour, True)
-    dp_err = step
-    while dp_err <= max_dp_error:
-        res = cv2.approxPolyDP(contour, dp_err * peri, True)
-        if len(res) <= nsides:
-            # print('approxPolyDP_adaptive found at step', step)
-            return res
-        dp_err += step
-    return None
+    # contours have 3 dimensions, so reshape to match
+    return (array(res) + offset_vec).reshape((-1,1,2))
 
 
 def plot_hough_line(frame, rho, theta, color=(0, 0, 255), thickness=1, offset=None):
