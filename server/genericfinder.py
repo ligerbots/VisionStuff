@@ -73,7 +73,10 @@ class GenericFinder:
     @staticmethod
     def quad_from_diagonals(contour):
         '''Find the furthest points along the diagonal to be the quadrilateral.
-        Taken from Robot Casserole 1736. Thanks!'''
+        Taken from Robot Casserole 1736. Thanks!
+
+        Note this works well if the shape is close to an upright rectangle.
+        If it might be significantly tilted, it could fail.'''
 
         x_plus_y = contour[:, :, 0] + contour[:, :, 1]
         x_minus_y = contour[:, :, 0] - contour[:, :, 1]
@@ -87,7 +90,8 @@ class GenericFinder:
 
         # approx = GenericFinder.approxPolyDP_adaptive(contour, nsides=4)
         approx = GenericFinder.quad_from_diagonals(contour)
-        return hough_fit.hough_fit(contour, nsides=4, approx_fit=approx, image_frame=image_frame)
+        return approx
+        # return hough_fit.hough_fit(contour, nsides=4, approx_fit=approx, image_frame=image_frame)
 
     @staticmethod
     def sort_corners(contour, center=None):
