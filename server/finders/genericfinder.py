@@ -245,7 +245,7 @@ def time_processing(cube_processor, input_files):
 def main(finder_type):
     '''Main routine for testing a Finder'''
     import argparse
-    import camerautil
+    from camera import camerautil
 
     parser = argparse.ArgumentParser(description='finder test routine')
     parser.add_argument('--output_dir', help='Output directory for processed images')
