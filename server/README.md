@@ -1,3 +1,6 @@
+Install (most of) the requirements:
+`pip install -r requirements.txt`
+
 Start server manually:
 `python -m visionserver.visionserver2020`
 
