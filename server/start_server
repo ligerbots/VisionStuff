@@ -4,7 +4,7 @@
 
 DIR=/home/odroid/VisionServer/server
 
-SCRIPT=visionserver2020.py
+SCRIPT="visionserver.visionserver2020"
 
 # For running standalone (not alongside a RoboRio), set TEST_MODE=1
 TEST_MODE=1
@@ -153,7 +153,7 @@ case "$1" in
 
         # Start the server, but limit the CPU to #4-7, which are the fast ones
         echo '' >> $LOG_FILE
-        taskset -c 4-7 python3 ./$SCRIPT $ARGS >> $LOG_FILE 2>&1 < /dev/null &
+        taskset -c 4-7 python3 -m $SCRIPT $ARGS >> $LOG_FILE 2>&1 < /dev/null &
 
         test $WEB_SERVER = 1 && start_webserver
 	;;
