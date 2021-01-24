@@ -10,7 +10,7 @@ SCRIPT=visionserver2020.py
 TEST_MODE=1
 
 # For serious debugging, add the "--verbose" option, but it is very noisy
-ARGS="--calib_dir ../data/calibration"
+ARGS="--calib_dir data/camera_calibration"
 [ $TEST_MODE = 1 ] && ARGS="$ARGS --test"
 
 # Turn on web server
