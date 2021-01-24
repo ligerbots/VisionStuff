@@ -10,7 +10,7 @@ import sys
 import math
 import cv2
 import numpy
-import hough_fit
+import fitters.hough_fit
 
 two_pi = 2 * math.pi
 pi_by_2 = math.pi / 2

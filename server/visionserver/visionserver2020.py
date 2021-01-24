@@ -4,12 +4,12 @@
 
 from networktables.util import ntproperty
 
-from visionserver import VisionServer, main
-import cameras
-from genericfinder import GenericFinder
-from goalfinder2020 import GoalFinder2020
-from ballfinder2020 import BallFinder2020
-from hopperfinder2020 import HopperFinder2020
+from visionserver.visionserver import VisionServer, main
+import camera.cameras
+from finders.genericfinder import GenericFinder
+from finders.goalfinder2020 import GoalFinder2020
+from finders.ballfinder2020 import BallFinder2020
+from finders.hopperfinder2020 import HopperFinder2020
 
 
 class VisionServer2020(VisionServer):

@@ -6,7 +6,7 @@
 import cv2
 import numpy
 from scipy.optimize import minimize
-from codetimer import CodeTimer
+from util.codetimer import CodeTimer
 from scipy.spatial.distance import cdist
 
 
@@ -115,4 +115,3 @@ class PolygonFitter():
 # Y = cdist(XA, XB, 'sqeuclidean')
 
 # https://maprantala.com/2010/05/16/measuring-distance-from-a-point-to-a-line-segment/
-

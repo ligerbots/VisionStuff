@@ -6,7 +6,7 @@ import cv2
 import numpy
 import math
 
-from genericfinder import GenericFinder, main
+from finders.genericfinder import GenericFinder, main
 
 
 class GoalFinder2020(GenericFinder):

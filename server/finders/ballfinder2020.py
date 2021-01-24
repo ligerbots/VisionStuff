@@ -4,7 +4,7 @@ import cv2
 import numpy
 import math
 
-from genericfinder import GenericFinder, main
+from finders.genericfinder import GenericFinder, main
 
 
 class BallFinder2020(GenericFinder):

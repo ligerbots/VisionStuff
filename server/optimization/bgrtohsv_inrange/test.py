@@ -8,8 +8,9 @@ import argparse
 import numpy
 import cv2
 
-from cbgrtohsv_inrange import *
-from codetimer import CodeTimer
+
+from optimization.bgrtohsv_inrange import *
+from util.codetimer import CodeTimer
 
 
 def bgrtohsv_inrange_cv2(image, lowLimitHSV, highLimitHSV, hsv_frame, thres_frame):
@@ -67,8 +68,7 @@ def main():
             #    print(image_file, " function conversion failed")
             if not numpy.array_equal(thres_frame, table_out):
                 print(image_file, " table conversion failed")
-
-    CodeTimer.outputTimers()
+    CodeTimer.output_timers()
     return
 
 

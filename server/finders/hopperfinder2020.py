@@ -5,8 +5,8 @@ import numpy
 import json
 import math
 
-from genericfinder import GenericFinder, main
-import hough_fit
+from finders.genericfinder import GenericFinder, main
+import fitters.hough_fit
 
 
 class HopperFinder2020(GenericFinder):

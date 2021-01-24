@@ -9,7 +9,7 @@ from numpy import rot90
 import os.path
 from threading import Thread
 from time import time, sleep
-from camerautil import load_calibration_file
+from camera.camerautil import load_calibration_file
 
 
 class Camera:

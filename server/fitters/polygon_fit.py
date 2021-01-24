@@ -17,7 +17,7 @@ from numpy import array, amin, amax, sqrt, pi, round, dot
 from numpy.linalg import solve
 import numpy
 
-from codetimer import CodeTimer
+from util.codetimer import CodeTimer
 
 
 def convex_polygon_fit(contour, nsides):
@@ -77,7 +77,7 @@ def refine_convex_fit(contour, contour_fit):
 
         delta = contour_fit[iside1][0] - contour_fit[iside2][0]
         line_length = sqrt(delta.dot(delta))
-        
+
         start_area = cv2.contourArea(contour_fit)
 
         best_area = None
@@ -220,7 +220,7 @@ def hough_refine(contour, contour_fit):
         rho = sqrt(hesse_vec.dot(hesse_vec))
         theta = atan2(hesse_vec[1], hesse_vec[0])
         print('hesse', rho, math.degrees(theta))
-        
+
         hesse_form.append((rho, theta))
         minmax[0] = min(minmax[0], rho)
         minmax[1] = max(minmax[1], rho)

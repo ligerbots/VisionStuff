@@ -119,7 +119,7 @@ start_webserver() {
         WEB_ARGS="$WEB_ARGS --robot=10.28.77.12"
     fi
     (
-        cd ../webControls
+        cd ../web_controls
         python3 -m pynetworktables2js $WEB_ARGS > /dev/null 2>&1 < /dev/null &
     )
 }
@@ -134,10 +134,10 @@ case "$1" in
         cd $DIR
 
         set_cpu_performance
-        
+
         # make sure the image save directory is always there, and read/write for everyone
         mkdir -m a=rwx -p $IMAGE_SAVE_DIR
-        
+
         LOG_FILE=$( logfile_name )
 
 	date > $LOG_FILE
