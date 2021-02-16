@@ -224,7 +224,7 @@ def time_processing(cube_processor, input_files):
     # Loop 100x over the files. This is needed to make it long enough
     #  to get reasonable statistics. If we have 100s of files, we could reduce this.
     # Need the total time to be many seconds so that the timing resolution is good.
-    for _ in range(100):
+    for _ in range(10):
         for image_file in input_files:
             with CodeTimer("Read Image"):
                 bgr_frame = cv2.imread(image_file)
