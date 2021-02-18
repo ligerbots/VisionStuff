@@ -70,6 +70,7 @@ class MarkerFinder2020(GenericFinder):
         self.high_limit_hsv = np.array((255, 255, 110), dtype=np.uint8)
 
         # some variables to save results for drawing
+        self.raw_contours = []
         self.contour_list = []
         self.grid_points = []
         self.result_points = {}
@@ -89,12 +90,12 @@ class MarkerFinder2020(GenericFinder):
         hsv_frame = cv2.cvtColor(camera_frame, cv2.COLOR_BGR2HSV)
         threshold_frame = cv2.inRange(hsv_frame, self.low_limit_hsv, self.high_limit_hsv)
 
-        contours, hierarchy = cv2.findContours(
+        self.raw_contours, hierarchy = cv2.findContours(
             threshold_frame, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         self.contour_list = []
 
-        for contour in contours:
+        for contour in self.raw_contours:
             x, y, w, h = cv2.boundingRect(contour)
 
             if(w > image_width/2 or h > image_height/2):
@@ -205,6 +206,9 @@ class MarkerFinder2020(GenericFinder):
                     self.totransform_world_coordinates, rvec, tvec, self.cameraMatrix, self.distortionMatrix)
                 grid_pts, [center] = np.split(np.squeeze(imgpts), [-1])
 
+                if(center[0] < 0 or center[1] < 0 or center[0] > image_width or center[1] > image_height):
+                    continue
+
                 self.grid_points.extend(grid_pts)
 
                 colors_bool = self.extract_grid(threshold_frame, grid_pts)
@@ -245,7 +249,9 @@ class MarkerFinder2020(GenericFinder):
 
         upper_contours = [contour["contour"] for contour in self.contour_list if contour["lower"]]
         lower_contours = [contour["contour"] for contour in self.contour_list if contour["islower"]]
-
+        other_contours = [contour["contour"] for contour in self.contour_list if not(contour["islower"] or contour["lower"])]
+        cv2.drawContours(output_frame, self.raw_contours, -1, (255, 0, 255), 1)
+        cv2.drawContours(output_frame, other_contours, -1, (128, 128, 128), 1)
         cv2.drawContours(output_frame, upper_contours, -1, (0, 0, 255), 1)
         cv2.drawContours(output_frame, lower_contours, -1, (255, 0, 0), 1)
 
