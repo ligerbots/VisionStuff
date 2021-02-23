@@ -4,15 +4,13 @@ import cv2
 import numpy as np
 import math
 
-from genericfinder import GenericFinder, main
+from genericfinder import GenericFinder
 
 import numba as nb
 from numba.np.extensions import cross2d
 import layout
 
-import matplotlib_utils
-import matplotlib.pyplot as plt
-
+import markerfinder_position_solver
 
 @nb.njit(nb.float32(nb.float64[:], nb.float64[:], nb.float64[:], nb.float64[:]))
 def line_ray_intersect(line1, line2, ray1, ray_dir):
@@ -46,49 +44,6 @@ def poly_ray_intersect(poly, ray1, ray_dir):
                 min_d = d
     return min_d
 
-
-# nx2, nx2
-def find_rigid_transform(x, y):
-    # https://scicomp.stackexchange.com/a/6901
-    assert len(x) == len(y)
-    x_center = np.mean(x, axis=0)
-    y_center = np.mean(y, axis=0)
-    A = x - x_center
-    B = y - y_center
-    C = B.T @ A
-    U, S_diag, V_T = np.linalg.svd(C)
-    R = U @ V_T
-    if(np.linalg.det(R) < 0):
-        R = U @ np.diag([1, -1]) @ V_T
-    d = y_center - R @ x_center
-    return R, d
-
-
-def find_rigid_transform_ransac(x, y, cutoff_error, iters=20, sample_size=3):
-    assert len(x) >= sample_size
-
-    best = np.zeros((x.shape[0],), dtype=bool)
-    best_count = 0
-    for i in range(iters):
-        sample_indexes = np.random.choice(
-            x.shape[0], sample_size, replace=False)
-        sample_x = x[sample_indexes]
-        sample_y = y[sample_indexes]
-        R, d = find_rigid_transform(sample_x, sample_y)
-        transformed_x = x @ R.T + d
-
-        error = np.linalg.norm(transformed_x - y, axis=1)
-        success = error < cutoff_error
-
-        count = np.count_nonzero(success)
-        if(count > best_count):
-            best = success
-            best_count = count
-
-    R, d = find_rigid_transform(x[best], y[best])
-    return R, d
-
-
 def undo_tilt_on_image_plane_coords(point, theta):
     x, y = point
     return(np.array([
@@ -96,7 +51,6 @@ def undo_tilt_on_image_plane_coords(point, theta):
         (math.sin(theta) + y * math.cos(theta)) /
         (math.cos(theta) - y * math.sin(theta))
     ]))
-
 
 def image_coords_to_image_plane_coords(point, camera_matrix, distortion_matrix):
     ptlist = np.array([[point]])
@@ -123,7 +77,6 @@ def get_direction_in_image_plane_coords(x, y, tilt):
         y * math.sin(tilt) + math.cos(tilt)
     ])
 
-
 @nb.njit(nb.float64[:](nb.float64, nb.float64, nb.float64, nb.float64[:, :]))
 def get_direction_in_image_coords(x, y, tilt, camera_matrix):
     x_prime = (x - camera_matrix[0, 2]) / camera_matrix[0, 0]
@@ -133,7 +86,6 @@ def get_direction_in_image_coords(x, y, tilt, camera_matrix):
         slope_prime[0] * camera_matrix[0, 0],
         slope_prime[1] * camera_matrix[1, 1]
     ])
-
 
 @nb.njit(nb.int64[:](nb.uint8[:, :, :], nb.int64[:], nb.int64[:]))
 def scanline(image, start, end):
@@ -198,6 +150,7 @@ def linreg(x,y):
     slope = np.sum((x-x_m)*(y-y_m))/np.sum((x-x_m)**2)
     y_cept = y_m - x_m * slope
     return np.array([y_cept,slope])
+
 @nb.njit(nb.types.Tuple((nb.float64[:,:,:], nb.float64[:]))(nb.uint8[:, :, :], nb.float64, nb.float64, nb.float64[:], nb.float64, nb.float64[:,:]), parallel=True)
 def scanlines(image, half_width, third_height, lower_center, tilt_angle, camera_matrix):
 
@@ -291,6 +244,7 @@ def extract_payload(image, grid):
         return((data_value))
     else:
         return None
+
 class MarkerFinder2021(GenericFinder):
     '''Marker finder for Infinite Recharge at home'''
     target_world_coordinates = np.array([
@@ -311,14 +265,12 @@ class MarkerFinder2021(GenericFinder):
         grid_center_world_coordinates
     ])
 
-    def __init__(self, calib_matrix=None, dist_matrix=None, camera_name="shooter"):
-        super().__init__('markerfinder', camera='intake', finder_id=2.0, exposure=0)
+    def __init__(self, calib_matrix, dist_matrix, camera_name):
+        super().__init__("markerfinder_"+camera_name, camera=camera_name, finder_id=0.0, exposure=0)
 
-        # individual properties
         self.low_limit_hsv = np.array((0, 0, 0), dtype=np.uint8)
         self.high_limit_hsv = np.array((255, 255, 120), dtype=np.uint8)
 
-        # some variables to save results for drawing
         self.raw_contours = []
         self.contour_list = []
         self.scan_lines = []
@@ -329,12 +281,9 @@ class MarkerFinder2021(GenericFinder):
         self.cameraMatrix = calib_matrix
         self.distortionMatrix = dist_matrix
 
-        # camera mount angle (radians)
         self.tilt_angle = layout.camera_pos[camera_name]["tilt"]
-        # height of camera off the ground (inches)
         self.camera_height = layout.camera_pos[camera_name]["height"]
 
-        # transform of points from relative to camera to relative to robot
         self.camera_transform_inv = layout.camera_pos[camera_name]["transform_inv"]
 
         self.camera_name = camera_name
@@ -522,7 +471,7 @@ class MarkerFinder2021(GenericFinder):
                             "id": payload_value,
                             "relative_to_robot": relative_to_robot
                         })
-                        
+
     def calculate_robot_pos_from_contour_center(self, upper_center, lower_center, center):
         camera_plane_height = self.calculate_camera_plane_height(upper_center, lower_center)
 
@@ -538,8 +487,7 @@ class MarkerFinder2021(GenericFinder):
             [relative_to_camera, [1]]) @ self.camera_transform_inv)[:2]
         return relative_to_robot
 
-    def process_image(self, camera_frame):
-        '''Main image processing routine'''
+    def add_markers_image(self, camera_frame):
         image_height, image_width, _ = camera_frame.shape
 
         hsv_frame = cv2.cvtColor(camera_frame, cv2.COLOR_BGR2HSV)
@@ -569,39 +517,9 @@ class MarkerFinder2021(GenericFinder):
             #else:
             #    self.process_small_contour_pair(contour, camera_frame)
 
-        if(len(self.result_points) < 3):
-            return (0.0, self.finder_id, 0, 0, 0.0, 0, 0)
-
-        relative_to_robot_pts = np.array(
-            [pt["relative_to_robot"] for pt in self.result_points])
-        absolute_pts = np.array(
-            [layout.markers[pt["id"]]["position"] for pt in self.result_points])
-
-        R, d = find_rigid_transform(relative_to_robot_pts, absolute_pts)
-
-        relative_to_robot_pts_transformed = (relative_to_robot_pts) @ R.T + d
-
-
-        matplotlib_utils.draw_autonav_field("barrel")
-        plt.scatter(*(relative_to_robot_pts_transformed.T))
-        plt.scatter(*(absolute_pts.T))
         for pt in self.result_points:
-            plt.annotate(str(pt["id"]), R @ pt["relative_to_robot"] + d)
+            markerfinder_position_solver.solver.add_marker(pt["relative_to_robot"], pt["id"])
 
-        for pt in self.result_points:
-            pos = layout.markers[pt["id"]]["position"]
-            plt.annotate(str(pt["id"]), pos)
-
-        plt.plot(*d, 'ro')
-        dir = R @ np.array([0, 25])
-        plt.arrow(*d, *dir, head_width=5, head_length=5, fc='k', ec='k')
-
-        plt.annotate("robot", d)
-
-        plt.show()
-
-
-        return (1.0, self.finder_id, 0, 0, 0.0, 0, 0)
 
     def extract_grid(self, threshold_frame, grid_pts):
         image_height, image_width = threshold_frame.shape
@@ -669,10 +587,12 @@ class MarkerFinder2021(GenericFinder):
                         (255, 255, 0),
                         1)
 
+
+        cv2.putText(output_frame, self.camera_name,
+                    (10,200),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    .4,
+                    (255, 255, 0),
+                    1)
+        markerfinder_position_solver.solver.draw(output_frame)
         return output_frame
-
-
-# Main routine
-# This is for development/testing
-if __name__ == '__main__':
-    main(MarkerFinder2021)

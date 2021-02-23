@@ -106,6 +106,7 @@ class VisionServer:
         self.image_writer = ImageWriter(location_root='./saved_images',
                                         capture_period=0.5, image_format='jpg')
 
+        self.mode_after_processing = None
         return
 
     # --------------------------------------------------------------------------------
@@ -292,7 +293,8 @@ class VisionServer:
                 # ntmode = self.nt_active_mode  # temp, for efficiency
                 ntmode = self.mode_chooser_ctrl.getSelected()
                 if ntmode != self.active_mode:
-                    self.switch_mode(ntmode)
+                    if not (ntmode == "markerfinder_intake" and self.active_mode == "markerfinder_shooter"):
+                        self.switch_mode(ntmode)
 
                 # if self.camera_frame is None:
                 #     self.preallocate_arrays()
@@ -334,6 +336,9 @@ class VisionServer:
                     proc_result = self.process_image()
                     target_res.extend(proc_result)
 
+                if(self.mode_after_processing is not None):
+                    self.switch_mode(self.mode_after_processing)
+                    self.mode_after_processing = None
                 # Send the results as one big array in order to guarantee that the results
                 #  all arrive at the RoboRio at the same time
                 # Value is (Timestamp, Found, Mode, distance, angle1, angle2) as a flat array.

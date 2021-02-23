@@ -21,7 +21,7 @@ class BallFinder2020(GenericFinder):
     VP_HALF_HEIGHT = math.tan(math.radians(VFOV)/2.0)  # view plane 1/2 width
 
     def __init__(self, calib_matrix=None, dist_matrix=None):
-        super().__init__('ballfinder', camera='intake', finder_id=2.0, exposure=0)
+        super().__init__('ballfinder', camera='intake', finder_id=9.0, exposure=0)
 
         # individual properties
         self.low_limit_hsv = numpy.array((15, 95, 95), dtype=numpy.uint8)
