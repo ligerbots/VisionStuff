@@ -128,7 +128,7 @@ def scanline(image, start, end):
                 total = np.sum(swap_t, dtype=np.int32)
 
                 if(np.amax(swap_t) - np.amin(swap_t) < total / 3 * MAX_TOLERANCE + 3 and total > 6):
-                    return np.array([i-num_prev_cols//2, total])
+                    return np.array([i-num_prev_cols//2, total], dtype=np.int32)
 
                 for j in range(num_prev_cols - 1):
                     i += 1
@@ -141,7 +141,7 @@ def scanline(image, start, end):
                         prev_cols[i % num_prev_cols] = np.zeros((3,))
 
         i += 1
-    return np.array([-1, -1])
+    return np.array([-1, -1], dtype=np.int32)
 
 @nb.njit(nb.float32[:](nb.float32[:],nb.float32[:]))
 def linreg(x,y):
@@ -210,7 +210,7 @@ def scanlines(image, half_width, third_height, lower_center, tilt_angle, camera_
             interp_y = (yi - 2.5)/3
             ret[yi, xi] = np.array([x,y]) + dir*interp_y
 
-    return (ret, np.array([center_x, center_y, t_b + t_m*center_x]))
+    return (ret, np.array([center_x, center_y, t_b + t_m*center_x], dtype=np.float32))
 
 def extract_payload(image, grid):
     image_height, image_width, _ = image.shape
@@ -318,7 +318,7 @@ class MarkerFinder2021(GenericFinder):
 
             img_moments = cv2.moments(contour)
             center = np.array((img_moments['m10'] / img_moments['m00'],
-                               img_moments['m01'] / img_moments['m00']))
+                               img_moments['m01'] / img_moments['m00']), dtype=np.float32)
 
             if(img_moments['mu20'] == img_moments['mu02']):
                 continue
@@ -328,7 +328,7 @@ class MarkerFinder2021(GenericFinder):
             if(major < minor * 2):
                 continue
 
-            direction = np.array((math.cos(angle), math.sin(angle)))
+            direction = np.array((math.cos(angle), math.sin(angle)), dtype=np.float32)
 
             self.contour_list.append({
                 "contour": contour,
@@ -385,7 +385,7 @@ class MarkerFinder2021(GenericFinder):
             self.target_points.extend(grid.reshape(-1,2))
             payload = extract_payload(camera_frame,grid)
             if payload is not None and payload in layout.markers:
-                center = np.array([x,y])
+                center = np.array([x,y], dtype=np.float32)
                 relative_to_robot = self.calculate_robot_pos_from_contour_center(contour["center"],lower["center"],center)
                 self.result_points.append({
                     "center": center,
@@ -398,8 +398,8 @@ class MarkerFinder2021(GenericFinder):
         image_height, image_width = threshold_frame.shape
         lower = contour["lower"]
 
-        contour_np = contour["contour"].astype(np.float)
-        lower_np = lower["contour"].astype(np.float)
+        contour_np = contour["contour"].astype(np.float32)
+        lower_np = lower["contour"].astype(np.float32)
         top_right = poly_ray_intersect(
             contour_np[:, 0, :], contour["center"], contour["direction"])
         top_left = poly_ray_intersect(
@@ -467,7 +467,7 @@ class MarkerFinder2021(GenericFinder):
                         relative_to_robot = self.calculate_robot_pos_from_contour_center(contour["center"], lower["center"], center)
 
                         self.result_points.append({
-                            "center": center,
+                            "center": center.astype(np.float32),
                             "id": payload_value,
                             "relative_to_robot": relative_to_robot
                         })
