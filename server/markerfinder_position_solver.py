@@ -77,10 +77,10 @@ class PositionSolver:
             dir_vec = R @ np.array([0, 1])
             dir = math.atan2(dir_vec[1],dir_vec[0])
             self.prev_solution[2]=dir
-
             self.solve_successful=True
         else:
             self.solve_successful=False
+            self.prev_solution[:]=0
     def draw(self,draw_frame):
         box_topright = np.array([10,10+180], dtype=np.float64)
         box_bottomleft = np.array([10+360,10], dtype=np.float64)
@@ -88,8 +88,6 @@ class PositionSolver:
         def to_imagespace(pt):
             x=np.interp([pt[0]], [0, 360], [box_topright[0], box_bottomleft[0]])[0]
             y=np.interp([pt[1]], [0, 180], [box_topright[1], box_bottomleft[1]])[0]
-            print(pt,[x,y])
-
             return((int(x),int(y)))
         cv2.rectangle(draw_frame, tuple(box_topright.astype(np.int)), tuple(box_bottomleft.astype(np.int)), (0,255,0), 2)
         for sol_pt in self.prev_solution_pts:
@@ -119,6 +117,8 @@ class PositionSolver:
                         (255,255,0), 2)
 
     def get_vision_status(self, finder_id):
+        print("??",self.prev_solution)
+
         return (1. if self.solve_successful else 0., self.prev_solution[0], self.prev_solution[1], self.prev_solution[2], 0.0, 0.0, 0.0)
 
 solver = PositionSolver()
