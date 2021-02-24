@@ -151,7 +151,7 @@ def linreg(x,y):
     y_cept = y_m - x_m * slope
     return np.array([y_cept,slope])
 
-@nb.njit(nb.types.Tuple((nb.float32[:,:,:], nb.float32[:]))(nb.uint8[:, :, :], nb.float32, nb.float32, nb.float32[:], nb.float32, nb.float32[:,:]), parallel=True)
+@nb.njit(nb.types.Tuple((nb.float32[:,:,:], nb.float32[:]))(nb.uint8[:, :, :], nb.float32, nb.float32, nb.float32[:], nb.float32, nb.float32[:,:]))
 def scanlines(image, half_width, third_height, lower_center, tilt_angle, camera_matrix):
 
     xs = np.arange(-half_width, half_width, 1)
