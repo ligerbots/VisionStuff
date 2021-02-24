@@ -497,8 +497,12 @@ class MarkerFinder2021(GenericFinder):
             hsv_frame, self.low_limit_hsv, self.high_limit_hsv)
         #threshold_frame = cv2.adaptiveThreshold(v_frame,255,cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY_INV, 111,29)
 
-        self.raw_contours, hierarchy = cv2.findContours(
-            threshold_frame, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        findcontours_result = cv2.findContours(threshold_frame, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        if len(findcontours_result) == 2:
+            self.raw_contours = findcontours_result[0]
+        else:
+            self.raw_contours = findcontours_result[1]
+
 
         self.filter_raw_contours(image_width, image_height)
         self.pair_contours()
