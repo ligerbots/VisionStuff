@@ -12,7 +12,7 @@ import layout
 
 import markerfinder_position_solver
 
-@nb.njit(nb.float32(nb.float64[:], nb.float64[:], nb.float64[:], nb.float64[:]))
+@nb.njit(nb.float32(nb.float32[:], nb.float32[:], nb.float32[:], nb.float32[:]))
 def line_ray_intersect(line1, line2, ray1, ray_dir):
     # https://stackoverflow.com/a/565282/5771000
     # p=line1
@@ -32,7 +32,7 @@ def line_ray_intersect(line1, line2, ray1, ray_dir):
     return -1.
 
 
-@nb.njit(nb.float32(nb.float64[:, :], nb.float64[:], nb.float64[:]))
+@nb.njit(nb.float32(nb.float32[:, :], nb.float32[:], nb.float32[:]))
 def poly_ray_intersect(poly, ray1, ray_dir):
     min_d = -1
     for i in range(len(poly)):
@@ -63,21 +63,21 @@ def image_coords_to_image_plane_coords(point, camera_matrix, distortion_matrix):
     return(np.array([x_prime, y_prime]))
 
 
-@nb.njit(nb.float32(nb.float64))
+@nb.njit(nb.float32(nb.float32))
 def make_nonzero(n):
     if(n == 0):
-        return np.finfo(np.float64).eps
+        return np.finfo(np.float32).eps
     return n
 
 
-@nb.njit(nb.float64[:](nb.float64, nb.float64, nb.float64))
+@nb.njit(nb.float32[:](nb.float32, nb.float32, nb.float32))
 def get_direction_in_image_plane_coords(x, y, tilt):
     return np.array([
         x * math.sin(tilt),
         y * math.sin(tilt) + math.cos(tilt)
     ])
 
-@nb.njit(nb.float64[:](nb.float64, nb.float64, nb.float64, nb.float64[:, :]))
+@nb.njit(nb.float32[:](nb.float32, nb.float32, nb.float32, nb.float32[:, :]))
 def get_direction_in_image_coords(x, y, tilt, camera_matrix):
     x_prime = (x - camera_matrix[0, 2]) / camera_matrix[0, 0]
     y_prime = (y - camera_matrix[1, 2]) / camera_matrix[1, 1]
@@ -87,7 +87,7 @@ def get_direction_in_image_coords(x, y, tilt, camera_matrix):
         slope_prime[1] * camera_matrix[1, 1]
     ])
 
-@nb.njit(nb.int64[:](nb.uint8[:, :, :], nb.int64[:], nb.int64[:]))
+@nb.njit(nb.int32[:](nb.uint8[:, :, :], nb.int32[:], nb.int32[:]))
 def scanline(image, start, end):
     image_height, image_width, _ = image.shape
 
@@ -114,9 +114,9 @@ def scanline(image, start, end):
         x = start[0] + offset[0] * i // offset[1]
         y = start[1] + i
         if(0<=x<image_width and 0<=y<image_height):
-            this_col = image[y, x].astype(np.float64)
+            this_col = image[y, x].astype(np.float32)
 
-            prev_col = prev_cols[i % num_prev_cols].astype(np.float64)
+            prev_col = prev_cols[i % num_prev_cols].astype(np.float32)
             prev_cols[i % num_prev_cols] = image[y, x]
 
 
@@ -125,7 +125,7 @@ def scanline(image, start, end):
                 swap_i += 1
                 prev_swap = i
 
-                total = np.sum(swap_t, dtype=np.int64)
+                total = np.sum(swap_t, dtype=np.int32)
 
                 if(np.amax(swap_t) - np.amin(swap_t) < total / 3 * MAX_TOLERANCE + 3 and total > 6):
                     return np.array([i-num_prev_cols//2, total])
@@ -143,7 +143,7 @@ def scanline(image, start, end):
         i += 1
     return np.array([-1, -1])
 
-@nb.njit(nb.float64[:](nb.float64[:],nb.float64[:]))
+@nb.njit(nb.float32[:](nb.float32[:],nb.float32[:]))
 def linreg(x,y):
     x_m = np.mean(x)
     y_m = np.mean(y)
@@ -151,14 +151,14 @@ def linreg(x,y):
     y_cept = y_m - x_m * slope
     return np.array([y_cept,slope])
 
-@nb.njit(nb.types.Tuple((nb.float64[:,:,:], nb.float64[:]))(nb.uint8[:, :, :], nb.float64, nb.float64, nb.float64[:], nb.float64, nb.float64[:,:]), parallel=True)
+@nb.njit(nb.types.Tuple((nb.float32[:,:,:], nb.float32[:]))(nb.uint8[:, :, :], nb.float32, nb.float32, nb.float32[:], nb.float32, nb.float32[:,:]), parallel=True)
 def scanlines(image, half_width, third_height, lower_center, tilt_angle, camera_matrix):
 
     xs = np.arange(-half_width, half_width, 1)
 
-    f_xs = np.full((len(xs),), -1, dtype=nb.float64)
-    f_ys = np.full((len(xs),), -1, dtype=nb.float64)
-    totals = np.full((len(xs),), -1, dtype=nb.float64)
+    f_xs = np.full((len(xs),), -1, dtype=nb.float32)
+    f_ys = np.full((len(xs),), -1, dtype=nb.float32)
+    totals = np.full((len(xs),), -1, dtype=nb.float32)
 
     for i in nb.prange(len(xs)):
         center = lower_center + np.array([xs[i],0])
@@ -169,7 +169,7 @@ def scanlines(image, half_width, third_height, lower_center, tilt_angle, camera_
         top = center - dir*third_height/2*2.5
         bottom = center + dir*third_height/2*3.5
 
-        dy, total = scanline(image,top.astype(np.int64),bottom.astype(np.int64))
+        dy, total = scanline(image,top.astype(np.int32),bottom.astype(np.int32))
 
 
         if(dy>=0):
@@ -184,7 +184,7 @@ def scanlines(image, half_width, third_height, lower_center, tilt_angle, camera_
     s_totals = totals[success]
 
     if(len(s_f_xs) < 2):
-        return (np.zeros((0,0,0),dtype=np.float64),np.array([-1,-1, -1],dtype=np.float64))
+        return (np.zeros((0,0,0),dtype=np.float32),np.array([-1,-1, -1],dtype=np.float32))
 
     y_b, y_m = linreg(s_f_xs, s_f_ys)
     t_b, t_m = linreg(s_f_xs, s_totals)
@@ -194,7 +194,7 @@ def scanlines(image, half_width, third_height, lower_center, tilt_angle, camera_
     center_x = (left_x+right_x)/2
     center_y = y_b + y_m * center_x
 
-    ret = np.empty((6,4,2), dtype=np.float64)
+    ret = np.empty((6,4,2), dtype=np.float32)
 
     for xi in range(4):
         interp_x = (xi)/3

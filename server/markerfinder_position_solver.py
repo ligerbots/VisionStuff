@@ -50,7 +50,7 @@ def find_rigid_transform_ransac(x, y, cutoff_error, iters=20, sample_size=3):
 class PositionSolver:
     def __init__(self):
         self.prev_solution_pts = []
-        self.prev_solution = np.array([0,0,0],dtype=np.float64)
+        self.prev_solution = np.array([0,0,0],dtype=np.float32)
         self.solve_successful = False
         self.marker_pts = []
         self.marker_ids = []
@@ -82,8 +82,8 @@ class PositionSolver:
             self.solve_successful=False
             self.prev_solution[:]=0
     def draw(self,draw_frame):
-        box_topright = np.array([10,10+180], dtype=np.float64)
-        box_bottomleft = np.array([10+360,10], dtype=np.float64)
+        box_topright = np.array([10,10+180], dtype=np.float32)
+        box_bottomleft = np.array([10+360,10], dtype=np.float32)
 
         def to_imagespace(pt):
             x=np.interp([pt[0]], [0, 360], [box_topright[0], box_bottomleft[0]])[0]
