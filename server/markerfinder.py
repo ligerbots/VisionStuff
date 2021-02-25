@@ -44,6 +44,7 @@ def poly_ray_intersect(poly, ray1, ray_dir):
                 min_d = d
     return min_d
 
+@nb.njit(nb.float32[:](nb.float32[:], nb.float32))
 def undo_tilt_on_image_plane_coords(point, theta):
     x, y = point
     return(np.array([
@@ -51,6 +52,7 @@ def undo_tilt_on_image_plane_coords(point, theta):
         (math.sin(theta) + y * math.cos(theta)) /
         (math.cos(theta) - y * math.sin(theta))
     ]))
+
 
 def image_coords_to_image_plane_coords(point, camera_matrix, distortion_matrix):
     ptlist = np.array([[point]])
@@ -60,7 +62,7 @@ def image_coords_to_image_plane_coords(point, camera_matrix, distortion_matrix):
 
     x_prime = (x - camera_matrix[0, 2]) / camera_matrix[0, 0]
     y_prime = -(y - camera_matrix[1, 2]) / camera_matrix[1, 1]
-    return(np.array([x_prime, y_prime]))
+    return(np.array([x_prime, y_prime],dtype=np.float32))
 
 
 @nb.njit(nb.float32(nb.float32))

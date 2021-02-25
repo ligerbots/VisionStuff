@@ -69,15 +69,15 @@ markers = {
 # (x,y), height, angle, tilt
 camera_pos = {
     "intake": {
-        "position": np.array([0,12]),
-        "height": 20.5,
-        "angle": math.radians(0.0),
+        "position": np.array([0,-8]),
+        "height": 20,
+        "angle": math.radians(180.0),
         "tilt": math.radians(-15.0)
     },
     "shooter": {
-        "position": np.array([-11.24,-5.28]),
-        "height": 25.9,
-        "angle": math.radians(180.0),
+        "position": np.array([7.5,0]),
+        "height": 24,
+        "angle": math.radians(0.0),
         "tilt": math.radians(30.0)
     }
 }

@@ -76,6 +76,7 @@ class PositionSolver:
 
             dir_vec = R @ np.array([0, 1])
             dir = math.atan2(dir_vec[1],dir_vec[0])
+
             self.prev_solution[2]=dir
             self.solve_successful=True
         else:
@@ -113,12 +114,10 @@ class PositionSolver:
         robotpos_image = to_imagespace(self.prev_solution[:2])
         cv2.circle(draw_frame, robotpos_image, 5, (0, 255, 255), -1)
         cv2.arrowedLine(draw_frame, robotpos_image,
-                        (int(robotpos_image[0]+math.cos(self.prev_solution[2])*20), int(robotpos_image[1]+math.sin(self.prev_solution[2])*20)),
+                        to_imagespace((self.prev_solution[0]+math.cos(self.prev_solution[2])*20, self.prev_solution[1]+math.sin(self.prev_solution[2])*20)),
                         (255,255,0), 2)
 
     def get_vision_status(self, finder_id):
-        print("??",self.prev_solution)
-
         return (1. if self.solve_successful else 0., self.prev_solution[0], self.prev_solution[1], self.prev_solution[2], 0.0, 0.0, 0.0)
 
 solver = PositionSolver()
