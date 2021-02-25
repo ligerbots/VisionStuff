@@ -65,8 +65,6 @@ markers = {
     194: right_coords(5.5),
 }
 
-# based on cad
-# (x,y), height, angle, tilt
 camera_pos = {
     "intake": {
         "position": np.array([0,-8]),
@@ -94,5 +92,5 @@ for camera_name in camera_pos:
         [                       0,                       1, 0.],
         [ pos_info["position"][0], pos_info["position"][1], 1.],
     ])
-    pos_info["transform"] = rot_mat @ trans_mat
+    pos_info["transform"] = np.linalg.inv(trans_mat) @ np.linalg.inv(rot_mat)
     pos_info["transform_inv"] = np.linalg.inv(pos_info["transform"])
