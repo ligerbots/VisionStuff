@@ -56,7 +56,7 @@ class VisionServer2020(VisionServer):
         self.goal_finder = GoalFinder2020(cam.calibration_matrix, cam.distortion_matrix)
         self.add_target_finder(self.goal_finder)
 
-        self.markerfinder_shooter = MarkerFinder2021Shooter(cam.calibration_matrix, cam.distortion_matrix, lambda x: self.mode_after_processing = x)
+        self.markerfinder_shooter = MarkerFinder2021Shooter(cam.calibration_matrix, cam.distortion_matrix, self.set_mode_after_processing)
         self.add_target_finder(self.markerfinder_shooter)
 
         cam = self.cameras['intake']
@@ -69,7 +69,7 @@ class VisionServer2020(VisionServer):
         self.galactic_search_path_chooser = GalacticSearchPathChooser(cam.calibration_matrix, cam.distortion_matrix, result_nt_entry=NetworkTables.getTable("SmartDashboard").getEntry("vision/galactic_search_path_chooser/result"))
         self.add_target_finder(self.galactic_search_path_chooser)
 
-        self.markerfinder_intake = MarkerFinder2021Intake(cam.calibration_matrix, cam.distortion_matrix, lambda x: self.mode_after_processing = x)
+        self.markerfinder_intake = MarkerFinder2021Intake(cam.calibration_matrix, cam.distortion_matrix, self.set_mode_after_processing)
         self.add_target_finder(self.markerfinder_intake)
 
         self.update_parameters()

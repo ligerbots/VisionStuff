@@ -277,6 +277,10 @@ class VisionServer:
 
         return
 
+    def set_mode_after_processing(x):
+        print("set mode_after_processing =",x)
+        self.mode_after_processing = x
+
     def run(self):
         '''Main loop. Read camera, process the image, send to the MJPEG server'''
 
