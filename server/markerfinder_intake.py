@@ -10,7 +10,7 @@ class MarkerFinder2021Intake(MarkerFinder2021):
     def process_image(self, camera_frame):
         self.add_markers_image(camera_frame)
         self.set_finder_mode("markerfinder_shooter")
-        markerfinder_position_solver.solver.solve()
+        # markerfinder_position_solver.solver.solve()
         return(markerfinder_position_solver.solver.get_vision_status(self.finder_id))
 if __name__ == '__main__':
     main(MarkerFinder2021Intake)

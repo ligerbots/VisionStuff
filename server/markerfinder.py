@@ -593,12 +593,14 @@ class MarkerFinder2021(GenericFinder):
                         (255, 255, 0),
                         1)
 
-
-        cv2.putText(output_frame, self.camera_name,
-                    (10,200),
+        np.set_printoptions(suppress=True)
+        cv2.putText(output_frame, self.camera_name+" "+str(markerfinder_position_solver.solver.prev_solution),
+                    (10,205),
                     cv2.FONT_HERSHEY_SIMPLEX,
                     .4,
                     (255, 255, 0),
                     1)
+        np.set_printoptions(suppress=False)
+
         markerfinder_position_solver.solver.draw(output_frame)
         return output_frame

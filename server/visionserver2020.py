@@ -11,6 +11,9 @@ from genericfinder import GenericFinder
 from goalfinder2020 import GoalFinder2020
 from ballfinder2020 import BallFinder2020
 from hopperfinder2020 import HopperFinder2020
+from markerfinder_intake import MarkerFinder2021Intake
+from markerfinder_shooter import MarkerFinder2021Shooter
+
 from galactic_search_path_chooser import GalacticSearchPathChooser
 
 
@@ -53,6 +56,9 @@ class VisionServer2020(VisionServer):
         self.goal_finder = GoalFinder2020(cam.calibration_matrix, cam.distortion_matrix)
         self.add_target_finder(self.goal_finder)
 
+        self.markerfinder_shooter = MarkerFinder2021Shooter(cam.calibration_matrix, cam.distortion_matrix, lambda x: self.mode_after_processing = x)
+        self.add_target_finder(self.markerfinder_shooter)
+
         cam = self.cameras['intake']
         self.ball_finder = BallFinder2020(cam.calibration_matrix, cam.distortion_matrix)
         self.add_target_finder(self.ball_finder)
@@ -62,6 +68,9 @@ class VisionServer2020(VisionServer):
 
         self.galactic_search_path_chooser = GalacticSearchPathChooser(cam.calibration_matrix, cam.distortion_matrix, result_nt_entry=NetworkTables.getTable("SmartDashboard").getEntry("vision/galactic_search_path_chooser/result"))
         self.add_target_finder(self.galactic_search_path_chooser)
+
+        self.markerfinder_intake = MarkerFinder2021Intake(cam.calibration_matrix, cam.distortion_matrix, lambda x: self.mode_after_processing = x)
+        self.add_target_finder(self.markerfinder_intake)
 
         self.update_parameters()
 
