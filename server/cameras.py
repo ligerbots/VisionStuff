@@ -18,7 +18,7 @@ class Camera:
     Includes a threaded reader, so you can grab a frame without waiting, if needed'''
 
     def __init__(self, camera_server, name, device, height=240, fps=30, width=320, rotation=0,
-                 threaded=False):
+                 threaded=False, simulation_image = None):
         '''Create a USB camera and configure it.
         Note: rotation is an angle: 0, 90, 180, -90'''
 
@@ -26,25 +26,37 @@ class Camera:
         self.height = int(height)
         self.rot90_count = (rotation // 90) % 4  # integer division
 
-        self.camera = cscore.UsbCamera(name, device)
-        camera_server.startAutomaticCapture(camera=self.camera)
-        # keep the camera open for faster switching
-        self.camera.setConnectionStrategy(cscore.VideoSource.ConnectionStrategy.kKeepOpen)
+        if simulation_image is None:
+            self.camera = cscore.UsbCamera(name, device)
+            camera_server.startAutomaticCapture(camera=self.camera)
+            # keep the camera open for faster switching
+            self.camera.setConnectionStrategy(cscore.VideoSource.ConnectionStrategy.kKeepOpen)
 
-        self.camera.setResolution(self.width, self.height)
-        self.camera.setFPS(int(fps))
+            self.camera.setResolution(self.width, self.height)
+            self.camera.setFPS(int(fps))
 
-        # set the camera for no auto focus, focus at infinity
-        # NOTE: order does matter
-        self.set_property('focus_auto', 0)
-        self.set_property('focus_absolute', 0)
+            # set the camera for no auto focus, focus at infinity
+            # NOTE: order does matter
+            self.set_property('focus_auto', 0)
+            self.set_property('focus_absolute', 0)
 
-        mode = self.camera.getVideoMode()
-        logging.info("camera '%s' pixel format = %s, %dx%d, %dFPS", name,
-                     mode.pixelFormat, mode.width, mode.height, mode.fps)
+            mode = self.camera.getVideoMode()
+            logging.info("camera '%s' pixel format = %s, %dx%d, %dFPS", name,
+                         mode.pixelFormat, mode.width, mode.height, mode.fps)
 
-        # Variables for the threaded read loop
-        self.sink = camera_server.getVideo(camera=self.camera)
+            # Variables for the threaded read loop
+            self.sink = camera_server.getVideo(camera=self.camera)
+
+            self.simulation_image = None
+        else:
+            if self.rot90_count%2 == 0:
+                assert self.width == simulation_image.shape[1]
+                assert self.height == simulation_image.shape[0]
+            else:
+                assert self.height == simulation_image.shape[1]
+                assert self.width == simulation_image.shape[0]
+            self.simulation_image = simulation_image
+            self.simulation_name = name
 
         self.calibration_matrix = None
         self.distortion_matrix = None
@@ -59,35 +71,42 @@ class Camera:
         return
 
     def get_name(self):
-        return self.camera.getName()
-
+        if self.simulation_image is None:
+            return self.camera.getName()
+        else:
+            return self.simulation_name
     def set_exposure(self, value):
         '''Set the camera exposure. 0 means auto exposure'''
-
-        logging.info(f"Setting camera exposure to '{value}'")
-        if value == 0:
-            self.camera.setExposureAuto()
-            # Logitech does not like having exposure_auto_priority on when the light is poor
-            #  slows down the frame rate
-            # camera.getProperty('exposure_auto_priority').set(1)
+        if self.simulation_image is None:
+            logging.info(f"Setting camera exposure to '{value}'")
+            if value == 0:
+                self.camera.setExposureAuto()
+                # Logitech does not like having exposure_auto_priority on when the light is poor
+                #  slows down the frame rate
+                # camera.getProperty('exposure_auto_priority').set(1)
+            else:
+                self.camera.setExposureManual(int(value))
+                # camera.getProperty('exposure_auto_priority').set(0)
         else:
-            self.camera.setExposureManual(int(value))
-            # camera.getProperty('exposure_auto_priority').set(0)
+            logging.info(f"Attempted to set camera exposure to '{value}', but using simulation image")
+
         return
 
     def set_property(self, name, value):
         '''Set a camera property, such as auto_focus'''
-
-        logging.info(f"Setting camera property '{name}' to '{value}'")
-        try:
+        if self.simulation_image is None:
+            logging.info(f"Setting camera property '{name}' to '{value}'")
             try:
-                propVal = int(value)
-            except ValueError:
-                self.camera.getProperty(name).setString(value)
-            else:
-                self.camera.getProperty(name).set(propVal)
-        except Exception as e:
-            logging.warn("Unable to set property '{}': {}".format(name, e))
+                try:
+                    propVal = int(value)
+                except ValueError:
+                    self.camera.getProperty(name).setString(value)
+                else:
+                    self.camera.getProperty(name).set(propVal)
+            except Exception as e:
+                logging.warn("Unable to set property '{}': {}".format(name, e))
+        else:
+            logging.info(f"Attempted to set camera property '{name}' to '{value}', but using simulation image")
 
         return
 
@@ -141,12 +160,16 @@ class Camera:
         return self.frametime, self.camera_frame
 
     def _read_one_frame(self):
-        self.frametime, self.camera_frame = self.sink.grabFrame(self.camera_frame)
-        self.frame_number += 1
+        if self.simulation_image is None:
+            self.frametime, self.camera_frame = self.sink.grabFrame(self.camera_frame)
+            self.frame_number += 1
 
-        if self.rot90_count and self.frametime > 0:
-            # Numpy is *much* faster than the OpenCV routine
-            self.camera_frame = rot90(self.camera_frame, self.rot90_count)
+            if self.rot90_count and self.frametime > 0:
+                # Numpy is *much* faster than the OpenCV routine
+                self.camera_frame = rot90(self.camera_frame, self.rot90_count)
+        else:
+            self.frametime = time() * 1e8
+            self.camera_frame = self.simulation_image
         return
 
     def stop(self):
@@ -157,11 +180,11 @@ class Camera:
 
 
 class LogitechC930e(Camera):
-    def __init__(self, camera_server, name, device, height=240, fps=30, width=None, rotation=0, threaded=False):
+    def __init__(self, camera_server, name, device, height=240, fps=30, width=None, rotation=0, threaded=False, simulation_image = None):
         if not width:
             width = 424 if height == 240 else 848
 
-        super().__init__(camera_server, name, device, height=height, fps=fps, width=width, rotation=rotation, threaded=threaded)
+        super().__init__(camera_server, name, device, height=height, fps=fps, width=width, rotation=rotation, threaded=threaded, simulation_image=simulation_image)
 
         # Logitech does not like having exposure_auto_priority on when the light is poor
         #  slows down the frame rate
@@ -179,11 +202,11 @@ class LogitechC930e(Camera):
 
 
 class PSEye(Camera):
-    def __init__(self, camera_server, name, device, height=240, fps=30, width=None, rotation=0, threaded=False):
+    def __init__(self, camera_server, name, device, height=240, fps=30, width=None, rotation=0, threaded=False, simulation_image = None):
         if not width:
             width = 320 if height == 240 else 640
 
-        super().__init__(camera_server, name, device, height=height, fps=fps, width=width, rotation=rotation, threaded=threaded)
+        super().__init__(camera_server, name, device, height=height, fps=fps, width=width, rotation=rotation, threaded=threaded, simulation_image=simulation_image)
 
         # PS Eye camera needs to have its pixelformat set
         # Not tested yet. Does this need to happen earlier?

@@ -39,8 +39,9 @@ class VisionServer2020(VisionServer):
 
     rrtarget_exposure = ntproperty('/SmartDashboard/vision/rrtarget/exposure', 0, doc='Camera exposure for rrtarget (0=auto)')
 
-    def __init__(self, calib_dir, test_mode=False):
+    def __init__(self, calib_dir, test_mode=False, simulation_images = None):
         super().__init__(initial_mode='intake', test_mode=test_mode)
+        self.simulation_images=simulation_images
 
         self.camera_device_shooter = '/dev/v4l/by-id/usb-046d_Logitech_Webcam_C930e_DF7AF0BE-video-index0'
         self.camera_device_intake = '/dev/v4l/by-id/usb-046d_Logitech_Webcam_C930e-video-index0'
@@ -92,11 +93,13 @@ class VisionServer2020(VisionServer):
     def add_cameras(self, calib_dir):
         '''Add the cameras'''
 
-        cam = cameras.LogitechC930e(self.camera_server, 'shooter', self.camera_device_shooter, height=480, rotation=90)
+        cam = cameras.LogitechC930e(self.camera_server, 'shooter', self.camera_device_shooter, height=480, rotation=90,
+                simulation_image = None if self.simulation_images is None else self.simulation_images["shooter"] )
         cam.load_calibration(calib_dir)
         self.add_camera(cam, True)
 
-        cam = cameras.LogitechC930e(self.camera_server, 'intake', self.camera_device_intake, height=480, rotation=90)
+        cam = cameras.LogitechC930e(self.camera_server, 'intake', self.camera_device_intake, height=480, rotation=90,
+                simulation_image = None if self.simulation_images is None else self.simulation_images["intake"])
         cam.load_calibration(calib_dir)
         self.add_camera(cam, False)
         return

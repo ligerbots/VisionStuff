@@ -385,32 +385,7 @@ class VisionServer:
 
         return
 
-    def run_files(self, file_list):
-        '''Run routine to loop through a set of files and process each.
-        Waits a couple seconds between each, and loops forever'''
 
-        self.file_mode = True
-        file_index = 0
-        while True:
-            if self.camera_frame is None:
-                self.preallocate_arrays()
-
-            image_file = file_list[file_index]
-            print('Processing', image_file)
-            file_frame = cv2.imread(image_file)
-            numpy.copyto(self.camera_frame, file_frame)
-
-            self.process_image()
-
-            self.prepare_output_image()
-
-            self.output_stream.putFrame(self.output_frame)
-            # probably don't want to use sleep. Want something thread-compatible
-            # for _ in range(4):
-            time.sleep(0.5)
-
-            file_index = (file_index + 1) % len(file_list)
-        return
 
 # -----------------------------------------------------------------------------
 
@@ -444,7 +419,7 @@ def main(server_type):
     parser.add_argument('--test', action='store_true', help='Run in local test mode')
     parser.add_argument('--delay', type=int, default=0, help='Max delay trying to connect to NT server (seconds)')
     parser.add_argument('--verbose', '-v', action='store_true', help='Verbose. Turn up debug messages')
-    parser.add_argument('--files', action='store_true', help='Process input files instead of camera')
+    parser.add_argument('--sim_camera', action='store_true', help='Use image as camera input (ie --sim_camera intake:input.png)')
     parser.add_argument('input_files', nargs='*', help='input files')
 
     args = parser.parse_args()
@@ -471,13 +446,19 @@ def main(server_type):
         if args.delay > 0:
             wait_on_nt_connect(args.delay)
 
-    server = server_type(calib_dir=args.calib_dir, test_mode=args.test)
 
-    if args.files:
+    if args.sim_camera:
         if not args.input_files:
-            parser.usage()
+            parser.print_help()
+            return
 
-        server.run_files(args.input_files)
+        simulation_images = {}
+        for file in args.input_files:
+            cam_name, path = file.split(':', 1)
+            simulation_images[cam_name] = cv2.imread(path)
+        server = server_type(calib_dir=args.calib_dir, test_mode=args.test, simulation_images = simulation_images)
     else:
-        server.run()
+        server = server_type(calib_dir=args.calib_dir, test_mode=args.test)
+
+    server.run()
     return
