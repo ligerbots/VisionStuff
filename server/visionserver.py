@@ -277,7 +277,7 @@ class VisionServer:
 
         return
 
-    def set_mode_after_processing(x):
+    def set_mode_after_processing(self, x):
         print("set mode_after_processing =",x)
         self.mode_after_processing = x
 
@@ -297,8 +297,7 @@ class VisionServer:
                 # ntmode = self.nt_active_mode  # temp, for efficiency
                 ntmode = self.mode_chooser_ctrl.getSelected()
                 if ntmode != self.active_mode:
-                    if not (ntmode == "markerfinder_intake" and self.active_mode == "markerfinder_shooter"):
-                        self.switch_mode(ntmode)
+                    self.switch_mode(ntmode)
 
                 # if self.camera_frame is None:
                 #     self.preallocate_arrays()
