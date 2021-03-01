@@ -27,6 +27,8 @@ class Camera:
         self.rot90_count = (rotation // 90) % 4  # integer division
 
         if simulation_image is None:
+            self.simulation_image = None
+
             self.camera = cscore.UsbCamera(name, device)
             camera_server.startAutomaticCapture(camera=self.camera)
             # keep the camera open for faster switching
@@ -47,7 +49,6 @@ class Camera:
             # Variables for the threaded read loop
             self.sink = camera_server.getVideo(camera=self.camera)
 
-            self.simulation_image = None
         else:
             if self.rot90_count%2 == 0:
                 assert self.width == simulation_image.shape[1]
