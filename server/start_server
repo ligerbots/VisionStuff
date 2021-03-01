@@ -134,10 +134,10 @@ case "$1" in
         cd $DIR
 
         set_cpu_performance
-        
+
         # make sure the image save directory is always there, and read/write for everyone
         mkdir -m a=rwx -p $IMAGE_SAVE_DIR
-        
+
         LOG_FILE=$( logfile_name )
 
 	date > $LOG_FILE
@@ -167,3 +167,4 @@ case "$1" in
 	echo "$0 (start|stop|restart)"
 	;;
 esac
+exit 0
