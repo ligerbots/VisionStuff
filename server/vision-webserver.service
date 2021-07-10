@@ -1,0 +1,17 @@
+[Unit]
+Description=LigerBots Vision Webserver
+After=visionserver.service
+
+[Service]
+# TODO: easier way to select this
+# for operation on the robot
+Environment=NTSERVER_ARG="--team 2877"
+# for operation in test mode
+#Environment=NTSERVER_ARG=""
+
+WorkingDirectory=/home/odroid/VisionServer/webControls
+ExecStart=python3 -m pynetworktables2js --port 80 $NTSERVER_ARG
+
+# For now, don't start by default
+#[Install]
+#WantedBy=multi-user.target

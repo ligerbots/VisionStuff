@@ -1,0 +1,21 @@
+[Unit]
+Description=LigerBots Vision Server
+After=network.target syslog.target
+
+# quit if too many restarts in a short time
+StartLimitIntervalSec=120
+StartLimitBurst=3
+
+[Service]
+WorkingDirectory=/home/odroid/VisionServer/server
+# set to higher priority than typical
+Nice=-10
+# restart if it ends/crashes
+Restart=on-failure
+
+ExecStartPre=/bin/mkdir -p /home/odroid/VisionServer/server/logs
+ExecStart=/home/odroid/VisionServer/server/start_server
+KillSignal=SIGTERM
+
+[Install]
+WantedBy=multi-user.target

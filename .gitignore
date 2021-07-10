@@ -14,3 +14,4 @@ data/calibration/c930e_424x240_2019-01-30
 data/test_images/2020/ball_known_distances/
 data/test_images/2020/goal_known_distances/
 .venv
+test

@@ -13,10 +13,6 @@ TEST_MODE=0
 ARGS="--calib_dir ../data/calibration"
 [ $TEST_MODE = 1 ] && ARGS="$ARGS --test"
 
-# Turn on web server
-WEB_SERVER=0
-WEB_ARGS="-p 80"
-
 LOG_DIR="logs"
 LOG_BASE="visionserver"
 
@@ -124,48 +120,30 @@ start_webserver() {
     )
 }
 
-case "$1" in
-    stop)
-	pkill -f $SCRIPT
-	pkill -f pynetworktables2js
-	;;
+cd $DIR
 
-    start)
-        cd $DIR
+set_cpu_performance
 
-        set_cpu_performance
-        
-        # make sure the image save directory is always there, and read/write for everyone
-        mkdir -m a=rwx -p $IMAGE_SAVE_DIR
-        
-        LOG_FILE=$( logfile_name )
+# make sure the image save directory is always there, and read/write for everyone
+mkdir -m a=rwx -p $IMAGE_SAVE_DIR
 
-	date > $LOG_FILE
-        ls -l /dev/v4l/by-id >> $LOG_FILE
+LOG_FILE=$( logfile_name )
 
-        # Pinging the radio seems to be needed to get the Ethernet interface up reliably.
-        # Wait until radio is completely up.
-        radio=$(route -n | awk '$1=="0.0.0.0"{print $2}')
-        ##ping_address "$radio" >> $LOG_FILE 2>&1
+# Switch current program to have new pipes.
+# Set STDIN to be /dev/null so that it is disconnect from the terminal
+exec > $LOG_FILE 2>&1 < /dev/null
 
-        # Alternate: just keep pinging
-        ##ping $radio > /dev/null 2>&1 < /dev/null &
+date
+ls -l /dev/v4l/by-id
 
-        # Start the server, but limit the CPU to #4-7, which are the fast ones
-        echo '' >> $LOG_FILE
-        taskset -c 4-7 python3 ./$SCRIPT $ARGS >> $LOG_FILE 2>&1 < /dev/null &
+# Pinging the radio seems to be needed to get the Ethernet interface up reliably.
+# Wait until radio is completely up.
+##radio=$(route -n | awk '$1=="0.0.0.0"{print $2}')
+##ping_address "$radio" >> $LOG_FILE 2>&1
 
-        if [ $WEB_SERVER = 1 ]; then
-           start_webserver
-        fi
-	;;
+# Alternate: just keep pinging
+##ping $radio > /dev/null 2>&1 < /dev/null &
 
-    restart)
-	$0 stop
-	$0 start
-	;;
-
-    *)
-	echo "$0 (start|stop|restart)"
-	;;
-esac
+# Start the server, but limit the CPU to #4-7, which are the fast ones
+echo ''
+exec taskset -c 4-7 python3 ./$SCRIPT $ARGS
