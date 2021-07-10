@@ -431,6 +431,8 @@ def main(server_type):
     '''Main routine'''
 
     import argparse
+    import signal
+
     parser = argparse.ArgumentParser(description='LigerBots Vision Server')
     parser.add_argument('--calib_dir', required=True, help='Directory for calibration files')
     parser.add_argument('--test', action='store_true', help='Run in local test mode')
@@ -463,7 +465,16 @@ def main(server_type):
         if args.delay > 0:
             wait_on_nt_connect(args.delay)
 
+    # Initialization sometimes locks up. Set an alarm timer and bomb if it runs out
+    # Don't set a handler. It will crash and systemd will restart it automatically.
+    logging.info('Setting alarm for 5 seconds')
+    signal.alarm(5)             # 5 seconds
+
     server = server_type(calib_dir=args.calib_dir, test_mode=args.test)
+
+    # We got through. Cancel the alarm
+    signal.alarm(0)
+    logging.info('Alarm canceled')
 
     if args.files:
         if not args.input_files:
